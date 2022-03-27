@@ -9,9 +9,9 @@ var finalData = [];
 
 // customisation
 var res = 500;
-var contrast = 10;
+var contrast = 30;
 var speed = 2000;
-var transparency = 0.05;
+var transparency = 0.03;
 var decay = 0.8;
 
 // image variables and callbacks
