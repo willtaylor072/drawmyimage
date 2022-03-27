@@ -14,20 +14,30 @@ var speed = 2000;
 var transparency = 0.05;
 var decay = 0.8;
 
-// image processing variables
+// image variables and callbacks
 var imageCanvas = document.querySelector("#image_canvas");
 var ctx = imageCanvas.getContext("2d");
 var realInput = document.querySelector("#image_input");
 realInput.addEventListener("change", handleImage, false);
-var img;
-var imageData;
+var video = document.querySelector("#video");
+var videoInput = document.querySelector("#snap");
+videoInput.addEventListener("click", handleVideo);
+var pictureCapture = document.querySelector("#snapnow");
+pictureCapture.addEventListener("click", takePic);
 
-function setup() {}
+function setup() {
+  document.getElementById("snap").style.visibility = "visible";
+  document.getElementById("snapnow").style.visibility = "hidden";
+  document.getElementById("drawnow").style.visibility = "hidden";
+  
+  createCanvas(500,500);
+}
 
+// to upload an image
 function handleImage(e) {
   var reader = new FileReader();
   reader.onload = function (event) {
-    img = new Image();
+    var img = new Image();
     img.onload = function () {
       // scale image portrait or landscape
       if (img.width > img.height) {
@@ -40,21 +50,56 @@ function handleImage(e) {
 
       // get image data for processing
       ctx.drawImage(img, 0, 0, imageCanvas.width, imageCanvas.height);
-      imageData = ctx.getImageData(0, 0, imageCanvas.width, imageCanvas.height);
+      var imageData = ctx.getImageData(0, 0, imageCanvas.width, imageCanvas.height);
       var data = Object.values(imageData.data);
 
       // set up drawing canvas with correct dimensions
-      createCanvas(imageCanvas.width, imageCanvas.height);
-      y = floor(width / 2);
-      x = floor(height / 2);
-      rows = height;
-      cols = width;
+      resizeCanvas(imageCanvas.width, imageCanvas.height);
+      y = floor(imageCanvas.width / 2);
+      x = floor(imageCanvas.height / 2);
+      rows = imageCanvas.height;
+      cols = imageCanvas.width;
 
       process(data);
     };
     img.src = event.target.result;
   };
   reader.readAsDataURL(e.target.files[0]);
+}
+
+// to take a photo
+function handleVideo() {
+  video.style.display = "block";
+  document.getElementById("snap").style.visibility = "hidden";
+  document.getElementById("snapnow").style.visibility = "visible";
+
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
+      video.srcObject = stream;
+      video.play();
+    });
+  }
+}
+
+function takePic() {
+  imageCanvas.width = floor(1.33333 * res);
+  imageCanvas.height = res;
+  ctx.drawImage(video, 0, 0, imageCanvas.width, imageCanvas.height);
+
+  video.style.display = "none";
+  document.getElementById("snap").style.visibility = "visible";
+  document.getElementById("snapnow").style.visibility = "hidden";
+
+  imageData = ctx.getImageData(0, 0, imageCanvas.width, imageCanvas.height);
+  var data = Object.values(imageData.data);
+
+resizeCanvas(imageCanvas.width,imageCanvas.height);
+  y = floor(imageCanvas.width / 2);
+  x = floor(imageCanvas.height / 2);
+  rows = imageCanvas.height;
+  cols = imageCanvas.width;
+  
+  process(data);
 }
 
 // image processing for drawing algorithm
@@ -107,6 +152,7 @@ function process(data) {
 }
 
 function draw() {
+  
   if (ready == true) {
     for (let i = 0; i < speed; i++) {
       step();
