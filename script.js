@@ -30,7 +30,6 @@ pictureCapture.addEventListener("click", takePic);
 function setup() {
   document.getElementById("snap").style.visibility = "visible";
   document.getElementById("snapnow").style.visibility = "hidden";
-  document.getElementById("drawnow").style.visibility = "hidden";
 
   createCanvas(500, 500);
 
