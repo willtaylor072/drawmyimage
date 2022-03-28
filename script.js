@@ -2,17 +2,19 @@
 // misc
 var x;
 var y;
-var rows;
-var cols;
+var rows, cols;
 var ready = false;
 var finalData = [];
+var isMobile = false;
 
 // customisation
 var res = 500;
-var contrast = 30;
-var speed = 2000;
+var contrast = 20;
+var speed = 3000;
 var transparency = 0.03;
 var decay = 0.8;
+var fourDir = true;
+
 
 // image variables and callbacks
 var imageCanvas = document.querySelector("#image_canvas");
@@ -29,8 +31,18 @@ function setup() {
   document.getElementById("snap").style.visibility = "visible";
   document.getElementById("snapnow").style.visibility = "hidden";
   document.getElementById("drawnow").style.visibility = "hidden";
-  
-  createCanvas(500,500);
+
+  createCanvas(500, 500);
+
+  // device detection
+  if (
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent
+    )
+  ) {
+    isMobile = true;
+    alert("Not optimised for mobile...");
+  }
 }
 
 // to upload an image
@@ -50,7 +62,12 @@ function handleImage(e) {
 
       // get image data for processing
       ctx.drawImage(img, 0, 0, imageCanvas.width, imageCanvas.height);
-      var imageData = ctx.getImageData(0, 0, imageCanvas.width, imageCanvas.height);
+      var imageData = ctx.getImageData(
+        0,
+        0,
+        imageCanvas.width,
+        imageCanvas.height
+      );
       var data = Object.values(imageData.data);
 
       // set up drawing canvas with correct dimensions
@@ -82,8 +99,13 @@ function handleVideo() {
 }
 
 function takePic() {
-  imageCanvas.width = floor(1.33333 * res);
-  imageCanvas.height = res;
+  if (isMobile) {
+    imageCanvas.height = floor(1.33333 * res);
+    imageCanvas.width = res;
+  } else {
+    imageCanvas.width = floor(1.33333 * res);
+    imageCanvas.height = res;
+  }
   ctx.drawImage(video, 0, 0, imageCanvas.width, imageCanvas.height);
 
   video.style.display = "none";
@@ -93,12 +115,12 @@ function takePic() {
   imageData = ctx.getImageData(0, 0, imageCanvas.width, imageCanvas.height);
   var data = Object.values(imageData.data);
 
-resizeCanvas(imageCanvas.width,imageCanvas.height);
+  resizeCanvas(imageCanvas.width, imageCanvas.height);
   y = floor(imageCanvas.width / 2);
   x = floor(imageCanvas.height / 2);
   rows = imageCanvas.height;
   cols = imageCanvas.width;
-  
+
   process(data);
 }
 
@@ -152,7 +174,6 @@ function process(data) {
 }
 
 function draw() {
-  
   if (ready == true) {
     for (let i = 0; i < speed; i++) {
       step();
@@ -162,64 +183,100 @@ function draw() {
 
 // drawing algorithm
 function step() {
-  var total =
-    finalData[x + 1][y + 1] +
-    finalData[x + 1][y] +
-    finalData[x + 1][y - 1] +
-    finalData[x][y + 1] +
-    finalData[x][y - 1] +
-    finalData[x - 1][y + 1] +
-    finalData[x - 1][y] +
-    finalData[x - 1][y - 1];
+  var total;
+  var c1, c2, c3, c4, c5, c6, c7;
+  var r;
+  if (fourDir) {
+    total =
+      finalData[x + 1][y] +
+      finalData[x][y + 1] +
+      finalData[x][y - 1] +
+      finalData[x - 1][y];
 
-  var c1 = finalData[x + 1][y] / total;
-  var c2 = finalData[x + 1][y + 1] / total + c1;
-  var c3 = finalData[x - 1][y] / total + c2;
-  var c4 = finalData[x - 1][y - 1] / total + c3;
-  var c5 = finalData[x][y + 1] / total + c4;
-  var c6 = finalData[x][y - 1] / total + c5;
-  var c7 = finalData[x + 1][y - 1] / total + c6;
+    c1 = finalData[x + 1][y] / total;
 
-  stroke("rgba(0,0,0," + transparency + ")");
+    c3 = finalData[x - 1][y] / total + c1;
 
-  var r = random(0, 1);
+    c5 = finalData[x][y + 1] / total + c3;
 
-  if (r < c1) {
-    line(y, x, y + 1, x);
-    x++;
-  } else if (r < c2) {
-    line(y, x, y + 1, x + 1);
-    x++;
-    y++;
-  } else if (r < c3) {
-    line(y, x, y - 1, x);
-    x--;
-  } else if (r < c4) {
-    line(y, x, y - 1, x - 1);
-    x--;
-    y--;
-  } else if (r < c5) {
-    line(y, x, y, x + 1);
-    y++;
-  } else if (r < c6) {
-    line(y, x, y, x - 1);
-    y--;
-  } else if (r < c7) {
-    line(y, x, y + 1, x - 1);
-    x++;
-    y--;
+    stroke("rgba(0,0,0," + transparency + ")");
+
+    r = random(0, 1);
+
+    if (r < c1) {
+      line(y, x, y + 1, x);
+      x++;
+    } else if (r < c3) {
+      line(y, x, y - 1, x);
+      x--;
+    } else if (r < c5) {
+      line(y, x, y, x + 1);
+      y++;
+    } else {
+      line(y, x, y, x - 1);
+      y--;
+    }
+    finalData[x][y] = finalData[x][y] * decay;
   } else {
-    line(y, x, y - 1, x + 1);
-    x--;
-    y++;
-  }
-  finalData[x][y] = finalData[x][y] * decay;
-}
+    total =
+      finalData[x + 1][y + 1] +
+      finalData[x + 1][y] +
+      finalData[x + 1][y - 1] +
+      finalData[x][y + 1] +
+      finalData[x][y - 1] +
+      finalData[x - 1][y + 1] +
+      finalData[x - 1][y] +
+      finalData[x - 1][y - 1];
 
-function mousePressed() {
-  if (ready == true) {
-    ready = false;
-  } else if (finalData.length > 1) {
-    ready = true;
+    c1 = finalData[x + 1][y] / total;
+    c2 = finalData[x + 1][y + 1] / total + c1;
+    c3 = finalData[x - 1][y] / total + c2;
+    c4 = finalData[x - 1][y - 1] / total + c3;
+    c5 = finalData[x][y + 1] / total + c4;
+    c6 = finalData[x][y - 1] / total + c5;
+    c7 = finalData[x + 1][y - 1] / total + c6;
+
+    stroke("rgba(0,0,0," + transparency + ")");
+
+    r = random(0, 1);
+
+    if (r < c1) {
+      line(y, x, y + 1, x);
+      x++;
+    } else if (r < c2) {
+      line(y, x, y + 1, x + 1);
+      x++;
+      y++;
+    } else if (r < c3) {
+      line(y, x, y - 1, x);
+      x--;
+    } else if (r < c4) {
+      line(y, x, y - 1, x - 1);
+      x--;
+      y--;
+    } else if (r < c5) {
+      line(y, x, y, x + 1);
+      y++;
+    } else if (r < c6) {
+      line(y, x, y, x - 1);
+      y--;
+    } else if (r < c7) {
+      line(y, x, y + 1, x - 1);
+      x++;
+      y--;
+    } else {
+      line(y, x, y - 1, x + 1);
+      x--;
+      y++;
+    }
+    finalData[x][y] = finalData[x][y] * decay;
+  }
+
+  function mousePressed() {
+    if (ready == true) {
+      ready = false;
+    } else if (finalData.length > 1) {
+      ready = true;
+    }
   }
 }
