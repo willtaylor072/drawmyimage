@@ -270,6 +270,7 @@ function step() {
     }
     finalData[x][y] = finalData[x][y] * decay;
   }
+}
 
   function mousePressed() {
     if (ready == true) {
@@ -278,4 +279,4 @@ function step() {
       ready = true;
     }
   }
-}
+
