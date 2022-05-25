@@ -2,18 +2,24 @@
 // misc
 var x;
 var y;
+var xo;
+var yo;
 var rows, cols;
 var ready = false;
 var finalData = [];
 var isMobile = false;
+var first = true;
+var points = [];
+var start = [];
 
 // customisation
 var res = 500;
-var contrast = 20;
-var speed = 3000;
-var transparency = 0.03;
+var contrast = 60;
+var speed = 8;
 var decay = 0.8;
-var fourDir = true;
+var weight = 0.3;
+var light = 0.3;
+var spacing = 600;
 
 
 // image variables and callbacks
@@ -50,7 +56,8 @@ function handleImage(e) {
   reader.onload = function (event) {
     var img = new Image();
     img.onload = function () {
-      // scale image portrait or landscape
+      
+      // make canvases the same size
       if (img.width > img.height) {
         imageCanvas.width = res;
         imageCanvas.height = (img.height / img.width) * res;
@@ -73,6 +80,8 @@ function handleImage(e) {
       resizeCanvas(imageCanvas.width, imageCanvas.height);
       y = floor(imageCanvas.width / 2);
       x = floor(imageCanvas.height / 2);
+      yo = y;
+      xo = x;
       rows = imageCanvas.height;
       cols = imageCanvas.width;
 
@@ -117,6 +126,8 @@ function takePic() {
   resizeCanvas(imageCanvas.width, imageCanvas.height);
   y = floor(imageCanvas.width / 2);
   x = floor(imageCanvas.height / 2);
+  yo = y;
+  xo = x;
   rows = imageCanvas.height;
   cols = imageCanvas.width;
 
@@ -172,20 +183,24 @@ function process(data) {
   ready = true;
 }
 
+
 function draw() {
   if (ready == true) {
-    for (let i = 0; i < speed; i++) {
+    for (let i = 0; i < speed; i++) {  
       step();
     }
   }
 }
 
-// drawing algorithm
+// lead and chase algorithms
 function step() {
+  
+  // start with lead algorithm to get 3 new points for the bezier curve
+  for (let i = 1; i <= 3*spacing; i++){
   var total;
-  var c1, c2, c3, c4, c5, c6, c7;
+  var c1, c2, c3;
   var r;
-  if (fourDir) {
+
     total =
       finalData[x + 1][y] +
       finalData[x][y + 1] +
@@ -194,89 +209,59 @@ function step() {
 
     c1 = finalData[x + 1][y] / total;
 
-    c3 = finalData[x - 1][y] / total + c1;
+    c2 = finalData[x - 1][y] / total + c1;
 
-    c5 = finalData[x][y + 1] / total + c3;
-
-    stroke("rgba(0,0,0," + transparency + ")");
+    c3 = finalData[x][y + 1] / total + c2;
 
     r = random(0, 1);
 
     if (r < c1) {
-      line(y, x, y + 1, x);
-      x++;
-    } else if (r < c3) {
-      line(y, x, y - 1, x);
-      x--;
-    } else if (r < c5) {
-      line(y, x, y, x + 1);
-      y++;
-    } else {
-      line(y, x, y, x - 1);
-      y--;
-    }
-    finalData[x][y] = finalData[x][y] * decay;
-  } else {
-    total =
-      finalData[x + 1][y + 1] +
-      finalData[x + 1][y] +
-      finalData[x + 1][y - 1] +
-      finalData[x][y + 1] +
-      finalData[x][y - 1] +
-      finalData[x - 1][y + 1] +
-      finalData[x - 1][y] +
-      finalData[x - 1][y - 1];
-
-    c1 = finalData[x + 1][y] / total;
-    c2 = finalData[x + 1][y + 1] / total + c1;
-    c3 = finalData[x - 1][y] / total + c2;
-    c4 = finalData[x - 1][y - 1] / total + c3;
-    c5 = finalData[x][y + 1] / total + c4;
-    c6 = finalData[x][y - 1] / total + c5;
-    c7 = finalData[x + 1][y - 1] / total + c6;
-
-    stroke("rgba(0,0,0," + transparency + ")");
-
-    r = random(0, 1);
-
-    if (r < c1) {
-      line(y, x, y + 1, x);
       x++;
     } else if (r < c2) {
-      line(y, x, y + 1, x + 1);
-      x++;
-      y++;
+      x--;
     } else if (r < c3) {
-      line(y, x, y - 1, x);
-      x--;
-    } else if (r < c4) {
-      line(y, x, y - 1, x - 1);
-      x--;
-      y--;
-    } else if (r < c5) {
-      line(y, x, y, x + 1);
       y++;
-    } else if (r < c6) {
-      line(y, x, y, x - 1);
-      y--;
-    } else if (r < c7) {
-      line(y, x, y + 1, x - 1);
-      x++;
-      y--;
     } else {
-      line(y, x, y - 1, x + 1);
-      x--;
-      y++;
+      y--;
     }
-    finalData[x][y] = finalData[x][y] * decay;
+    
+    // store location in array object every n turns
+    if(i % spacing === 0){
+    points[i/spacing - 1] = [];
+    points[i/spacing - 1][0] = x;
+    points[i/spacing - 1][1] = y;
+    }
+    
+    // decay every visited point
+    finalData[x][y] = finalData[x][y] * decay; 
   }
+  
+
+// draw bezier curve using the 3 new points from the lead algorithm, and the one point from the end of the last curve
+  
+noFill()  
+stroke("rgba(0,0,0," + light + ")");
+strokeWeight(weight)
+  
+if (first == true){
+  start[0] = xo;
+  start[1] = yo;
+  first = false;
+}
+  
+bezier(start[1],start[0],points[0][1],points[0][0],points[1][1],points[1][0],points[2][1],points[2][0])
+  
+  start[0] = points[2][0];
+  start[1] = points[2][1];
+
 }
 
-  function mousePressed() {
-    if (ready == true) {
-      ready = false;
-    } else if (finalData.length > 1) {
-      ready = true;
-    }
-  }
 
+function mousePressed() {
+  if (ready == true) {
+    ready = false;
+  } else if (finalData.length > 1) {
+    ready = true;
+
+  }
+}
