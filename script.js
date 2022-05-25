@@ -14,12 +14,12 @@ var start = [];
 
 // customisation
 var res = 500;
-var contrast = 60;
+var contrast = 80;
 var speed = 8;
-var decay = 0.8;
+var decay = 0.9;
 var weight = 0.3;
 var light = 0.3;
-var spacing = 600;
+var spacing = 500;
 
 
 // image variables and callbacks
