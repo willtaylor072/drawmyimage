@@ -2,24 +2,21 @@
 // misc
 var x;
 var y;
-var xo;
-var yo;
 var rows, cols;
 var ready = false;
 var finalData = [];
 var isMobile = false;
-var first = true;
 var points = [];
-var start = [];
 
 // customisation
-var res = 500;
-var contrast = 80;
-var speed = 8;
-var decay = 0.9;
-var weight = 0.3;
-var light = 0.3;
-var spacing = 500;
+var res = 500; // canvas length or height
+var contrast = 100; // weighting of darker areas
+var speed = 5; // speed of animation
+var decay = 0.95; // how fast new areas are reached 
+var weight = 0.7; // line thickness
+var light = 0.2; // line alpha
+var spacing = 800; // distance between sampled points
+var n = 30; // number of sampled points per iteration
 
 
 // image variables and callbacks
@@ -37,8 +34,8 @@ function setup() {
   document.getElementById("snap").style.visibility = "visible";
   document.getElementById("snapnow").style.visibility = "hidden";
 
-  createCanvas(500, 500);
-
+createCanvas(500, 500);
+ctx2 = canvas.getContext('2d');
   // device detection
   if (
     /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
@@ -80,8 +77,6 @@ function handleImage(e) {
       resizeCanvas(imageCanvas.width, imageCanvas.height);
       y = floor(imageCanvas.width / 2);
       x = floor(imageCanvas.height / 2);
-      yo = y;
-      xo = x;
       rows = imageCanvas.height;
       cols = imageCanvas.width;
 
@@ -126,8 +121,6 @@ function takePic() {
   resizeCanvas(imageCanvas.width, imageCanvas.height);
   y = floor(imageCanvas.width / 2);
   x = floor(imageCanvas.height / 2);
-  yo = y;
-  xo = x;
   rows = imageCanvas.height;
   cols = imageCanvas.width;
 
@@ -195,8 +188,8 @@ function draw() {
 // lead and chase algorithms
 function step() {
   
-  // start with lead algorithm to get 3 new points for the bezier curve
-  for (let i = 1; i <= 3*spacing; i++){
+  // start with lead algorithm to get 'n' new points (1 after every 'spacing' iterations) for the curve generator
+  for (let i = 1; i <= n*spacing; i++){
   var total;
   var c1, c2, c3;
   var r;
@@ -225,7 +218,7 @@ function step() {
       y--;
     }
     
-    // store location in array object every n turns
+    // sample points every certain number of turns
     if(i % spacing === 0){
     points[i/spacing - 1] = [];
     points[i/spacing - 1][0] = x;
@@ -237,23 +230,29 @@ function step() {
   }
   
 
-// draw bezier curve using the 3 new points from the lead algorithm, and the one point from the end of the last curve
+// draw smooth curves between the sampled control points
+beginShape()
   
-noFill()  
-stroke("rgba(0,0,0," + light + ")");
+stroke("rgba(0,0,0," + light + ")")
 strokeWeight(weight)
+noFill()
   
-if (first == true){
-  start[0] = xo;
-  start[1] = yo;
-  first = false;
-}
+// starting coordinate
+vertex(points[0][1],points[0][0])  
   
-bezier(start[1],start[0],points[0][1],points[0][0],points[1][1],points[1][0],points[2][1],points[2][0])
+var count = 0; 
+for (count = 1; count <points.length -2; count ++){
   
-  start[0] = points[2][0];
-  start[1] = points[2][1];
-
+var xc = (points[count][1] + points[count + 1][1]) / 2;
+var yc = (points[count][0] + points[count + 1][0]) / 2;
+  
+quadraticVertex(points[count][1], points[count][0], xc, yc);
+} 
+  
+   // curve through the last two points
+quadraticVertex(points[count][1], points[count][0], points[count+1][1],points[count+1][0]);
+  
+endShape()
 }
 
 
