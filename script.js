@@ -11,11 +11,11 @@ var points = [];
 // customisation
 var res = 500; // canvas length or height
 var contrast = 80; // weighting of darker areas
-var speed = 6; // speed of animation
+var speed = 3; // speed of animation
 var decay = 0.9; // how fast new areas are reached 
 var weight = 0.7; // line thickness
 var light = 0.15; // line alpha
-var spacing = 800; // distance between sampled points
+var spacing = 300; // distance between sampled points
 var n = 30; // number of sampled points per iteration
 
 
